@@ -1,0 +1,200 @@
+# Gambas Form File 3.0
+
+{ Form Form
+  MoveScaled(0,0,156,82)
+  Arrangement = Arrange.Vertical
+  Padding = 5
+  { HBox1 HBox
+    MoveScaled(0,0,141,10)
+    { Panel5 VBox
+      MoveScaled(0,0,61,10)
+      { Panel10 HBox
+        MoveScaled(0,0,61,4)
+        { ComboBoxCmd ComboBox
+          MoveScaled(0,0,44,4)
+        }
+        { Panel2 Panel
+          MoveScaled(44,0,3,3)
+        }
+      }
+      { Panel6 Panel
+        MoveScaled(0,4,8,2)
+        Expand = True
+      }
+      { HBox3 HBox
+        MoveScaled(0,6,36,4)
+        { ButtonClear Button
+          MoveScaled(0,0,13,4)
+          Text = Shortcut(("Clear"), "C")
+        }
+        { Panel1 Panel
+          MoveScaled(15,1,4,3)
+        }
+        { CheckBoxFortune CheckBox
+          MoveScaled(20,0,16,2)
+          ToolTip = ("Will display 'fortune' on starting the program")
+          Text = Shortcut(("Fortune"), "F")
+        }
+      }
+    }
+    { Panel3 Panel
+      MoveScaled(61,1,3,3)
+      Expand = True
+    }
+    { Panel7 VBox
+      MoveScaled(74,0,62,10)
+      Background = Color.LightGray
+      { Panel8 HBox
+        MoveScaled(0,0,59,4)
+        { RadioButtonCommands RadioButton AllRadio
+          Name = "RadioButtonCommands"
+          MoveScaled(0,0,16,4)
+          Text = Shortcut(("Commands"), "C")
+        }
+        { Separator5 Separator
+          MoveScaled(15,0,0,4)
+          Background = Color.Black
+        }
+        { RadioButtonManPage RadioButton AllRadio
+          Name = "RadioButtonManPage"
+          MoveScaled(15.8571,0.1429,16,4)
+          Text = Shortcut(("Man Page"), "M")
+        }
+        { Separator1 Separator
+          MoveScaled(31,0,0,4)
+          Background = Color.Black
+        }
+        { RadioButtonHistory RadioButton AllRadio
+          Name = "RadioButtonHistory"
+          MoveScaled(31,0,16,4)
+          Text = Shortcut(("History"), "H")
+        }
+        { Separator2 Separator
+          MoveScaled(46,0,0,4)
+          Background = Color.Black
+        }
+        { RadioButtonNone RadioButton AllRadio
+          Name = "RadioButtonNone"
+          MoveScaled(46,0,16,4)
+          Text = Shortcut(("None"), "N")
+          Value = True
+        }
+      }
+      { Panel9 HBox
+        MoveScaled(0,4,58,6)
+        { LabelCommands Label
+          MoveScaled(0,0,16,4)
+          Alignment = Align.Center
+        }
+        { Separator6 Separator
+          MoveScaled(15,0,0,4)
+          Background = Color.Black
+        }
+        { LabelManP Label
+          MoveScaled(16,0,16,4)
+          Alignment = Align.Center
+        }
+        { Separator4 Separator
+          MoveScaled(31,0,0,4)
+          Background = Color.Black
+        }
+        { LabelHist Label
+          MoveScaled(31,0,16,4)
+          Alignment = Align.Center
+        }
+        { Separator3 Separator
+          MoveScaled(46,0,0,4)
+          Background = Color.Black
+        }
+      }
+    }
+    { Panel11 Panel
+      MoveScaled(138,2,1,5)
+    }
+  }
+  { Panel12 Panel
+    MoveScaled(58,12,7,0.2857)
+  }
+  { HSplit1 HSplit
+    MoveScaled(2,17,125,61)
+    Expand = True
+    { HBoxTerminalView VBox
+      MoveScaled(1,5,25,49)
+      Padding = 5
+      { TerminalView1 TerminalView
+        MoveScaled(3,13,21,8)
+        Expand = True
+        Blink = True
+      }
+    }
+    { VBoxMan VBox
+      MoveScaled(48,0,20,7)
+      Visible = False
+      Expand = True
+      Padding = 5
+      { TextAreaMan TextArea
+        MoveScaled(0,0,19,6)
+        Expand = True
+        ReadOnly = True
+        Wrap = True
+      }
+    }
+    { VBoxCommands VBox
+      MoveScaled(29,35,93,22)
+      Visible = False
+      { HBoxCommandSelect HBox
+        MoveScaled(1,0,89,4)
+      }
+      { GridViewCommands GridView
+        MoveScaled(41,5,21,16)
+        Expand = True
+        Grid = False
+      }
+    }
+    { VBoxHistory VBox
+      MoveScaled(29,11,94,23)
+      Visible = False
+      Expand = True
+      Padding = 5
+      { HBox2 HBox
+        MoveScaled(0,0,88,4)
+        { Label2 Label
+          MoveScaled(1,0,28,4)
+          Text = ("Click an item to select")
+        }
+        { Label1 Label
+          MoveScaled(39,0,9,3)
+          Text = (" Search ")
+          Alignment = Align.Right
+        }
+        { Panel4 Panel
+          MoveScaled(49,0,1,3)
+        }
+        { TextBoxSearch TextBox
+          MoveScaled(50,0,11,5)
+          Expand = True
+        }
+        { LabelFound Label
+          MoveScaled(63,0,22,4)
+          AutoResize = True
+        }
+      }
+      { GridViewHistory GridView
+        MoveScaled(3,5,25,13)
+        Expand = True
+        Grid = False
+      }
+    }
+  }
+  { Label3 Label
+    MoveScaled(26,78,56,4)
+  }
+  { Timer1 #Timer
+    #MoveScaled(133,16)
+  }
+  { TimerFocus #Timer
+    #MoveScaled(135,30)
+    Enabled = True
+    Delay = 2000
+  }
+}

@@ -1,0 +1,275 @@
+' Gambas class file
+
+' Gambas class file' Gambas class file
+
+bSkip As Boolean
+pBash As Process
+sHistory As String[] = Split(File.Load(User.home &/ ".bash_history"), gb.NewLine)
+sCommands As String[] = Dir("/usr/bin").sort()
+
+Public Sub Form_Show()
+
+BuildForm
+SetUp
+
+End
+
+Public Sub SetUp()
+
+pBash = TerminalView1.Exec(["bash"])
+Me.Width = Desktop.Width - ((Desktop.Width / 100) * 10)
+Me.Height = Desktop.Height - ((Desktop.Height / 100) * 10)
+Me.Center
+SetUpHistory
+ManPage("man")
+TerminalView1.Font = Font["Noto Sans,  11"]
+TerminalView1.setfocus
+CheckBoxFortune.Value = Settings["fortune", True]
+If CheckBoxFortune.Value = True Then Timer1.Trigger 
+
+End
+
+Public Sub Form_Close()
+
+pBash.close
+
+End
+
+Public Sub BuildForm()
+Dim sList As String[] = ["No Selection", "List files - ls", "Change directory - cd"]
+Dim siCount As Short
+
+For siCount = 0 To sList.max 
+  ComboBoxCmd.Add(sList[siCount])
+Next
+
+End
+
+Public Sub ButtonClear_Click()
+
+TerminalView1.setfocus
+Desktop.Sendkeys("{[Control_L]C}")
+Desktop.Sendkeys("clear")
+Desktop.Sendkeys("[Return]")
+
+End
+
+Public Sub ComboBoxCmd_Click()
+
+'TODO: NEEDS SORTING WILL CRASH ON 'No Selection'
+
+Object.Call(Me, Mid(ComboBoxCmd.text, RInStr(ComboBoxCmd.text, " ") + 1))
+
+End
+
+Public Sub ls()
+
+ManPage("ls")
+TerminalView1.setfocus
+
+End
+
+Public Sub cd()
+
+ManPage("cd")
+TerminalView1.setfocus
+Desktop.Sendkeys("cd")
+
+End
+
+Public Sub SetUpHistory()
+Dim siCount As Short
+
+GridViewHistory.Clear
+
+With GridViewHistory
+  .Columns.count = 1
+  .Rows.Count = sHistory.Count
+End With
+
+For siCount = 0 To sHistory.Max
+  GridViewHistory[siCount, 0].text = sHistory[siCount]
+Next
+
+GridViewHistory.Scroll(0, GridViewHistory.ScrollHeight)
+
+TextBoxSearch.SetFocus
+LabelHist.Text = Str(sHistory.Count) & " Items"
+
+End
+
+Public Sub AllRadio_Click()
+Dim sName As String = Last.name
+
+VBoxMan.Visible = False
+VBoxHistory.Visible = False
+VBoxCommands.Visible = False
+
+Select Case sName
+  Case "RadioButtonManPage"
+    VBoxMan.Visible = True
+    TerminalView1.SetFocus
+  Case "RadioButtonHistory"
+    VBoxHistory.Visible = True
+    SetUpHistory
+  Case "RadioButtonCommands"
+    VBoxCommands.Visible = True
+    Commands
+End Select
+
+End
+
+Public Sub GridViewHistory_Click()
+Dim siRow As Short = Last.Row
+Dim sManP As String
+
+TerminalView1.setfocus
+Desktop.Sendkeys("{[Control_L]E}")
+Desktop.Sendkeys("{[Control_L]U}")
+
+TerminalView1.setfocus
+Desktop.Sendkeys(GridViewHistory[siRow, 0].text)
+
+sManP = Trim(Replace(GridViewHistory[siRow, 0].text, "sudo", ""))
+
+ManPage(Trim(sManP))
+
+End
+
+Public Sub TextBoxSearch_Change()
+Dim siCount As Short
+Dim sTemp As String
+Dim sFound As New String[]
+
+For Each sTemp In sHistory
+  If InStr(sTemp, TextBoxSearch.text) Then sFound.Add(sTemp)
+Next
+
+With GridViewHistory
+  .Clear
+  .Columns.count = 1
+  .Rows.count = sFound.Count
+End With
+
+If TextBoxSearch.text = "" Then 
+  sFound = sHistory.Copy()
+  GridViewHistory.Rows.count = sFound.Count
+End If
+
+ For siCount = 0 To sFound.Max
+  GridViewHistory[siCount, 0].text = sFound[siCount]
+Next
+
+LabelFound.text = Str(sFound.Count) & " Items found"
+
+TextBoxSearch.SetFocus
+
+End
+
+Public Sub ManPage(sText As String)
+Dim sMan As String
+
+Shell "man " & sText To sMan
+If Not sMan Then Return
+
+TextAreaMan.text = sMan
+
+If sMan Then 
+  LabelManP.text = Trim(Mid(sMan, 1, InStr(sMan, " ")))
+Else
+  LabelManP.text = ""
+Endif
+
+TextAreaMan.Pos = 0
+TerminalView1.SetFocus
+
+End
+
+Public Sub Timer1_Timer()
+
+Desktop.Sendkeys("fortune" & "[Return]")
+
+End
+
+Public Sub CheckBoxFortune_Click()
+
+Settings["fortune"] = CheckBoxFortune.Value
+Settings.Save
+
+End
+
+Public Sub TerminalView1_KeyRelease()
+Dim sLast As String = Last.text
+Dim sTemp As String
+
+If bSkip Then Return
+
+sTemp = Mid(sLast, RInStr(sLast, "$") + 2)
+If TextAreaMan.text Not Begins UCase(sTemp) Then ManPage(sTemp)
+
+End
+
+Public Sub TextBoxSearch_LostFocus()
+
+TimerFocus.Start
+
+End
+
+Public Sub TimerFocus_Timer()
+
+TerminalView1.SetFocus
+
+End
+
+Public Sub TextBoxSearch_GotFocus()
+
+TimerFocus.stop
+
+End
+
+Public Sub GridViewHistory_Enter()
+
+bSkip = True
+
+End
+
+Public Sub GridViewHistory_Leave()
+
+bSkip = False
+
+End
+
+Public Sub Commands()
+Dim siCount As Short
+Dim sName As String
+
+With GridViewCommands
+  .Columns.count = 2
+  .Rows.count = sCommands.Count
+End With
+
+For siCount = 0 To sCommands.Max
+  GridViewCommands[siCount, 0].text = sCommands[siCount]
+  If siCount < 40 Then 
+    Shell "man " & sCommands[siCount] To sName
+    sName = Mid(sName, InStr(sName, "NAME") + 5)
+    GridViewCommands[siCount, 1].text = Trim(Mid(sName, 1, InStr(sName, gb.NewLine) - 1))
+  End If
+  Wait
+Next
+
+GridViewCommands.Columns.Width = -1
+
+End
+
+' Public Sub Name(Arguments)
+' Dim hTBButton As ToolButton
+' Dim siCount As Short
+' 
+' For siCount = 0 To 26
+'   
+' Next
+'   
+' 
+' End
+
