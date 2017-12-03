@@ -1,15 +1,15 @@
 ' Gambas class file
 
-' Gambas class file' Gambas class file
-
 bSkip As Boolean
 pBash As Process
 sHistory As String[] = Split(File.Load(User.home &/ ".bash_history"), gb.NewLine)
-sCommands As String[] = Dir("/usr/bin").sort()
+sCommands As String[] = Dir("/usr/bin").sort(gb.IgnoreCase)
+hTBButton As ToolButton
+hLabel As Label
+fFontSize As Float = 9
 
 Public Sub Form_Show()
 
-BuildForm
 SetUp
 
 End
@@ -22,10 +22,11 @@ Me.Height = Desktop.Height - ((Desktop.Height / 100) * 10)
 Me.Center
 SetUpHistory
 ManPage("man")
-TerminalView1.Font = Font["Noto Sans,  11"]
+'TerminalView1.Font = Font["Noto Sans,  11"]
 TerminalView1.setfocus
 CheckBoxFortune.Value = Settings["fortune", True]
 If CheckBoxFortune.Value = True Then Timer1.Trigger 
+CreateSelector
 
 End
 
@@ -35,45 +36,12 @@ pBash.close
 
 End
 
-Public Sub BuildForm()
-Dim sList As String[] = ["No Selection", "List files - ls", "Change directory - cd"]
-Dim siCount As Short
-
-For siCount = 0 To sList.max 
-  ComboBoxCmd.Add(sList[siCount])
-Next
-
-End
-
 Public Sub ButtonClear_Click()
 
 TerminalView1.setfocus
 Desktop.Sendkeys("{[Control_L]C}")
 Desktop.Sendkeys("clear")
 Desktop.Sendkeys("[Return]")
-
-End
-
-Public Sub ComboBoxCmd_Click()
-
-'TODO: NEEDS SORTING WILL CRASH ON 'No Selection'
-
-Object.Call(Me, Mid(ComboBoxCmd.text, RInStr(ComboBoxCmd.text, " ") + 1))
-
-End
-
-Public Sub ls()
-
-ManPage("ls")
-TerminalView1.setfocus
-
-End
-
-Public Sub cd()
-
-ManPage("cd")
-TerminalView1.setfocus
-Desktop.Sendkeys("cd")
 
 End
 
@@ -120,7 +88,6 @@ End Select
 End
 
 Public Sub GridViewHistory_Click()
-Dim siRow As Short = Last.Row
 Dim sManP As String
 
 TerminalView1.setfocus
@@ -128,11 +95,11 @@ Desktop.Sendkeys("{[Control_L]E}")
 Desktop.Sendkeys("{[Control_L]U}")
 
 TerminalView1.setfocus
-Desktop.Sendkeys(GridViewHistory[siRow, 0].text)
+Desktop.Sendkeys(GridViewHistory[Last.Row, 0].text & " ")
 
-sManP = Trim(Replace(GridViewHistory[siRow, 0].text, "sudo", ""))
+sManP = Replace(GridViewHistory[Last.Row, 0].text, "sudo", "")
 
-ManPage(Trim(sManP))
+ManPage(sManP)
 
 End
 
@@ -166,22 +133,37 @@ TextBoxSearch.SetFocus
 
 End
 
-Public Sub ManPage(sText As String)
-Dim sMan As String
+Public Sub ManPage(sInputMan As String)
+Dim sManPage As String
 
-Shell "man " & sText To sMan
-If Not sMan Then Return
+Shell "man " & sInputMan To sManPage
+If Left(sManPage, 20) = Left(TextAreaMan.text, 20) Then Return
+If Not sManPage Then Return
 
-TextAreaMan.text = sMan
+TextAreaMan.text = sManPage
 
-If sMan Then 
-  LabelManP.text = Trim(Mid(sMan, 1, InStr(sMan, " ")))
+If sManPage Then 
+  LabelManP.text = Trim(Mid(sManPage, 1, InStr(sManPage, " ")))
+  LabelManP.Font.Bold = True
+  LabelManP.Font.Size = fFontSize + 3
+  TimerManPage.Start
 Else
   LabelManP.text = ""
 Endif
 
 TextAreaMan.Pos = 0
 TerminalView1.SetFocus
+
+End
+
+Public Sub TimerManPage_Timer()
+
+LabelManP.Font.Size = LabelManP.Font.Size - 0.01
+
+If LabelManP.Font.Size <= fFontSize Then
+  TimerManPage.Stop
+  LabelManP.Font.Bold = False
+Endif
 
 End
 
@@ -239,37 +221,146 @@ bSkip = False
 
 End
 
-Public Sub Commands()
-Dim siCount As Short
+Public Sub Commands(Optional sChar As String)
+Dim siCount, siCounter As Short
 Dim sName As String
+Dim bTrigger, bBackGround As Boolean
+
+Try sName = Left(GridViewCommands[0, 0].text)
+If sName And If Not sChar Then Return
+
+GridViewCommands.Enabled = False
+HBoxCommandSelect.Enabled = False
+Wait
+
+If Not sChar Then sChar = "0"
 
 With GridViewCommands
+  .Clear
   .Columns.count = 2
-  .Rows.count = sCommands.Count
+  .Rows.count = 0
 End With
 
-For siCount = 0 To sCommands.Max
-  GridViewCommands[siCount, 0].text = sCommands[siCount]
-  If siCount < 40 Then 
-    Shell "man " & sCommands[siCount] To sName
-    sName = Mid(sName, InStr(sName, "NAME") + 5)
+If sChar = "0" Then 
+  For siCount = 0 To sCommands.Max
+    If Not IsLetter(Mid(sCommands[sicount], 1, 1)) Then
+      GridViewCommands.Rows.count += 1
+      GridViewCommands[siCounter, 0].text = sCommands[siCount]
+      Inc siCounter
+      bTrigger = True
+    Endif
+    If IsLetter(Mid(sCommands[sicount], 1, 1)) Then Break
+  Next
+Else
+  For siCount = 0 To sCommands.Max
+    If LCase(sCommands[sicount]) Begins LCase(sChar) Then
+      GridViewCommands.Rows.count += 1
+      GridViewCommands[siCounter, 0].text = sCommands[siCount]
+      Inc siCounter
+      bTrigger = True
+    Endif
+    If bTrigger And LCase(sCommands[sicount]) Not Begins LCase(sChar) Then Break
+  Next
+Endif
+
+GridViewCommands.Columns.Width = -1
+LabelCommands.Font.bold = True
+LabelCommands.Font.Size = LabelCommands.Font.Size + 2
+
+For siCount = 0 To GridViewCommands.Rows.count - 1
+  LabelCommands.Text = Str(siCount + 1) & " of " & Str(GridViewCommands.Rows.count)
+  Shell "man " & GridViewCommands[siCount, 0].text To sName
+  sName = Mid(sName, InStr(sName, "NAME\n") + 5)
+  If Trim(sName) = "" Then 
+    GridViewCommands[siCount, 1].text = "No man page found for this command"
+  Else
     GridViewCommands[siCount, 1].text = Trim(Mid(sName, 1, InStr(sName, gb.NewLine) - 1))
   End If
+  If bBackGround Then
+    GridViewCommands[siCount, 0].Background = Color.Background
+    GridViewCommands[siCount, 1].Background = Color.Background
+  Endif
+  bBackGround = Not bBackGround
   Wait
 Next
 
-GridViewCommands.Columns.Width = -1
+HBoxCommandSelect.Enabled = True
+GridViewCommands.Enabled = True
+LabelCommands.Font.bold = False
+LabelCommands.Font.Size = LabelCommands.Font.Size - 2
+Wait
 
 End
 
-' Public Sub Name(Arguments)
-' Dim hTBButton As ToolButton
-' Dim siCount As Short
-' 
-' For siCount = 0 To 26
-'   
-' Next
-'   
-' 
-' End
+Public Sub CreateSelector()
+Dim siCount As Short
 
+For siCount = 0 To 26
+  hTBButton = New ToolButton(HBoxCommandSelect) As "CommandLetters"
+  If siCount = 0 Then
+    With hTBButton
+    .H = 28
+    .W = 28
+    .Text = "0"
+    .border = True
+    .Tooltip = "Show all commands not starting with a letter"
+  End With
+    Continue
+  Endif
+  With hTBButton
+    .H = 28
+    .W = 28
+    .Text = Chr(64 + siCount)
+    .border = True
+    .Tooltip = "Show all commands starting with " & Chr(64 + siCount)
+  End With
+Next
+
+hLabel = New Label(HBoxCommandSelect) As "LabelCommandTotal"
+With hLabel
+  .Height = 28
+  .Width = 100
+  .Alignment = Align.Right
+  .Text = "Total = " & Str(sCommands.Max)
+End With
+
+End
+
+Public Sub CommandLetters_click()
+
+Commands(Last.text)
+Wait
+
+End
+
+Public Sub GridViewCommands_Click()
+
+If GridViewCommands.Enabled = False Then Return
+
+TerminalView1.setfocus
+Desktop.Sendkeys("{[Control_L]E}")
+Desktop.Sendkeys("{[Control_L]U}")
+
+TerminalView1.setfocus
+Desktop.Sendkeys(GridViewCommands[Last.Row, 0].text)
+
+'TODO: When selection a command from the 'Commands' list the Man Page needs a double click to update - Why?
+
+ManPage(Left(GridViewCommands[Last.Row, 0].text, InStr(GridViewCommands[Last.Row, 0].text, " ")))
+
+End
+
+
+'TODO: Context menu in Terminal not working well
+Public Sub TerminalMenu_Click()
+Dim sLast As String = Last.Name
+
+TerminalView1.setfocus
+Select Case sLast
+  Case "MenuPaste"
+    'TerminalView1.Input(Clipboard.Paste)
+  Case "MenuCopy"
+    Clipboard.Copy(TerminalView1.Text) ''Copys ALL the text in Terminal without the need to highlight?
+End Select
+
+End
