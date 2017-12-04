@@ -304,7 +304,7 @@ For siCount = 0 To GridViewCommands.Rows.count - 1
     GridViewCommands[siCount, 1].Background = Color.Background
   Endif
   bBackGround = Not bBackGround
-  Wait
+  If Not bSpeedFileExists Then Wait
 Next
 
 HBoxCommandSelect.Enabled = True
