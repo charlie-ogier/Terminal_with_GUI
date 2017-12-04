@@ -2,6 +2,7 @@
 
 bSkip As Boolean
 pBash As Process
+sFolder As String = User.Home &/ ".GUITerminal"
 sHistory As String[] = Split(File.Load(User.home &/ ".bash_history"), gb.NewLine)
 sCommands As String[] = Dir("/usr/bin").sort(gb.IgnoreCase)
 hTBButton As ToolButton
@@ -16,23 +17,30 @@ End
 
 Public Sub SetUp()
 
+If Settings["window", False] Then
+  Settings.read(Me, "Window")                                                   'Get details of the last window position and size
+Else
+  Me.Width = Desktop.Width - ((Desktop.Width / 100) * 10)
+  Me.Height = Desktop.Height - ((Desktop.Height / 100) * 10)
+  Me.Center
+Endif
+
 pBash = TerminalView1.Exec(["bash"])
-Me.Width = Desktop.Width - ((Desktop.Width / 100) * 10)
-Me.Height = Desktop.Height - ((Desktop.Height / 100) * 10)
-Me.Center
 SetUpHistory
 ManPage("man")
-'TerminalView1.Font = Font["Noto Sans,  11"]
+TerminalView1.Font = Font[Settings["font"]]
 TerminalView1.setfocus
-CheckBoxFortune.Value = Settings["fortune", True]
-If CheckBoxFortune.Value = True Then Timer1.Trigger 
+If Settings["fortune", True] Then Timer1.Trigger 
 CreateSelector
+
+If Not Exist(sFolder) Then Mkdir sFolder
 
 End
 
 Public Sub Form_Close()
 
 pBash.close
+Settings.Write(Me, "Window")                                                  'Store the window position and size
 
 End
 
@@ -173,13 +181,6 @@ Desktop.Sendkeys("fortune" & "[Return]")
 
 End
 
-Public Sub CheckBoxFortune_Click()
-
-Settings["fortune"] = CheckBoxFortune.Value
-Settings.Save
-
-End
-
 Public Sub TerminalView1_KeyRelease()
 Dim sLast As String = Last.text
 Dim sTemp As String
@@ -222,13 +223,15 @@ bSkip = False
 End
 
 Public Sub Commands(Optional sChar As String)
-Dim siCount, siCounter As Short
+Dim siCount, siCounter, siSpeed As Short
 Dim sName As String
-Dim bTrigger, bBackGround As Boolean
+Dim bTrigger, bBackGround, bSpeedFileExists, bFound As Boolean
+Dim sSpeedLoad, sSpeedSave As New String[]
 
 Try sName = Left(GridViewCommands[0, 0].text)
 If sName And If Not sChar Then Return
 
+LabelCommands.Text = "Working"
 GridViewCommands.Enabled = False
 HBoxCommandSelect.Enabled = False
 Wait
@@ -243,23 +246,23 @@ End With
 
 If sChar = "0" Then 
   For siCount = 0 To sCommands.Max
-    If Not IsLetter(Mid(sCommands[sicount], 1, 1)) Then
+    If Not IsLetter(Mid(sCommands[siCount], 1, 1)) Then
       GridViewCommands.Rows.count += 1
       GridViewCommands[siCounter, 0].text = sCommands[siCount]
       Inc siCounter
       bTrigger = True
     Endif
-    If IsLetter(Mid(sCommands[sicount], 1, 1)) Then Break
+    If IsLetter(Mid(sCommands[siCount], 1, 1)) Then Break
   Next
 Else
   For siCount = 0 To sCommands.Max
-    If LCase(sCommands[sicount]) Begins LCase(sChar) Then
+    If LCase(sCommands[siCount]) Begins LCase(sChar) Then
       GridViewCommands.Rows.count += 1
       GridViewCommands[siCounter, 0].text = sCommands[siCount]
       Inc siCounter
       bTrigger = True
     Endif
-    If bTrigger And LCase(sCommands[sicount]) Not Begins LCase(sChar) Then Break
+    If bTrigger And LCase(sCommands[siCount]) Not Begins LCase(sChar) Then Break
   Next
 Endif
 
@@ -267,15 +270,35 @@ GridViewCommands.Columns.Width = -1
 LabelCommands.Font.bold = True
 LabelCommands.Font.Size = LabelCommands.Font.Size + 2
 
+If Exist(sFolder &/ LCase(sChar) & ".csv") Then 
+  sSpeedLoad = Split(File.Load(sFolder &/ LCase(sChar) & ".csv"), gb.NewLine)
+  bSpeedFileExists = True
+End If
+
 For siCount = 0 To GridViewCommands.Rows.count - 1
-  LabelCommands.Text = Str(siCount + 1) & " of " & Str(GridViewCommands.Rows.count)
-  Shell "man " & GridViewCommands[siCount, 0].text To sName
-  sName = Mid(sName, InStr(sName, "NAME\n") + 5)
-  If Trim(sName) = "" Then 
-    GridViewCommands[siCount, 1].text = "No man page found for this command"
-  Else
-    GridViewCommands[siCount, 1].text = Trim(Mid(sName, 1, InStr(sName, gb.NewLine) - 1))
+  bFound = False
+  If Not bSpeedFileExists Then LabelCommands.Text = Str(siCount + 1) & " of " & Str(GridViewCommands.Rows.count)
+  If siCount = GridViewCommands.Rows.count - 1 Then LabelCommands.Text = Str(siCount + 1) & " of " & Str(GridViewCommands.Rows.count)
+  If bSpeedFileExists Then
+    For siSpeed = 0 To sSpeedLoad.Max
+      If InStr(sSpeedLoad[siSpeed], GridViewCommands[siCount, 0].text) Then
+        GridViewCommands[siCount, 1].text = Split(sSpeedLoad[siSpeed], "`")[1]
+        bFound = True
+        Break
+      Endif
+    Next
   End If
+
+  If Not bSpeedFileExists Or Not bFound
+    Shell "man " & GridViewCommands[siCount, 0].text To sName
+    sName = Mid(sName, InStr(sName, "NAME\n") + 5)
+    If Trim(sName) = "" Then 
+      GridViewCommands[siCount, 1].text = "No man page found for this command"
+    Else
+      GridViewCommands[siCount, 1].text = Trim(Mid(sName, 1, InStr(sName, gb.NewLine) - 1))
+    End If
+  Endif
+
   If bBackGround Then
     GridViewCommands[siCount, 0].Background = Color.Background
     GridViewCommands[siCount, 1].Background = Color.Background
@@ -289,6 +312,13 @@ GridViewCommands.Enabled = True
 LabelCommands.Font.bold = False
 LabelCommands.Font.Size = LabelCommands.Font.Size - 2
 Wait
+
+For siSpeed = 0 To GridViewCommands.Rows.count - 1
+  sSpeedSave.Add(GridViewCommands[siSpeed, 0].text & "`" & GridViewCommands[siSpeed, 1].text)
+Next
+
+If Exist(sFolder &/ LCase(sChar) & ".csv") Then Try Kill sFolder &/ LCase(sChar) & ".csv"
+File.Save(sFolder &/ LCase(sChar) & ".csv", sSpeedSave.Join(gb.newline))
 
 End
 
@@ -350,7 +380,6 @@ ManPage(Left(GridViewCommands[Last.Row, 0].text, InStr(GridViewCommands[Last.Row
 
 End
 
-
 'TODO: Context menu in Terminal not working well
 Public Sub TerminalMenu_Click()
 Dim sLast As String = Last.Name
@@ -362,5 +391,15 @@ Select Case sLast
   Case "MenuCopy"
     Clipboard.Copy(TerminalView1.Text) ''Copys ALL the text in Terminal without the need to highlight?
 End Select
+
+End
+
+Public Sub AllButtons_Click()
+
+If Last.name = "ToolButtonClose" Then Me.Close
+If Last.name = "ToolButtonSettings" Then
+  Configuration.Show
+  Me.Close
+Endif
 
 End

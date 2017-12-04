@@ -21,26 +21,36 @@
   { HBox1 HBox
     MoveScaled(0,0,167,10)
     { Panel5 VBox
-      MoveScaled(0,0,30,10)
+      MoveScaled(0,0,37,10)
       Expand = True
+      { HBox4 HBox
+        MoveScaled(2,0,35,4)
+        { ToolButtonSettings ToolButton AllButtons
+          Name = "ToolButtonSettings"
+          MoveScaled(2,0,4,4)
+          ToolTip = ("Settings")
+          Picture = Picture["icon:/22/options"]
+        }
+        { Panel1 Panel
+          MoveScaled(6,1,1,2)
+        }
+        { ToolButtonClose ToolButton AllButtons
+          Name = "ToolButtonClose"
+          MoveScaled(9,0,4,4)
+          ToolTip = ("Bye bye!")
+          Picture = Picture["icon:/22/stop"]
+        }
+      }
       { Panel6 Panel
-        MoveScaled(9,1,8,2)
+        MoveScaled(9,5,8,1)
         Expand = True
       }
       { HBox3 HBox
         MoveScaled(0,6,30,4)
         { ButtonClear Button
-          MoveScaled(0,0,13,4)
+          MoveScaled(0,0,24,4)
           ToolTip = ("This will clear the Terminal window")
-          Text = Shortcut(("Clear"), "C")
-        }
-        { Panel1 Panel
-          MoveScaled(13,1,2,3)
-        }
-        { CheckBoxFortune CheckBox
-          MoveScaled(15,0,16,2)
-          ToolTip = ("Will display 'fortune' on starting the program")
-          Text = Shortcut(("Fortune"), "F")
+          Text = Shortcut(("Clear Terminal"), "C")
         }
       }
     }
@@ -201,9 +211,6 @@
         Grid = False
       }
     }
-  }
-  { Label3 Label
-    MoveScaled(26,78,56,4)
   }
   { Timer1 #Timer
     #MoveScaled(133,16)

@@ -3,7 +3,7 @@
 Title=Terminal_with_GUI
 Startup=FMain
 Icon=icon.png
-Version=0.0.1
+Version=0.0.2
 Component=gb.image
 Component=gb.gui.qt
 Component=gb.form
@@ -15,5 +15,6 @@ Description="Terminal with GUI features\nGitHub version"
 Authors="Charlie Ogier 2017"
 TabSize=2
 Language=en_US
+CreateShortcut=1
 Vendor=cogier
 Packager=1

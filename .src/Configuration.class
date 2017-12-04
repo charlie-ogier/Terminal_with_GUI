@@ -1,0 +1,31 @@
+' Gambas class file
+
+
+Public Sub Form_Show()
+
+SwitchButtonFortune.Value = Settings["fortune", True]
+FontChooser1.SelectedFont = Settings["font", "Monospace,12"]
+SwitchButtonWindow.Value = Settings["window", False]
+
+End
+
+Public Sub ButtonClear_Click()
+
+FMain.Show
+Me.Close
+
+End
+
+Public Sub ButtonDone_Click()
+
+Settings["fortune"] = SwitchButtonFortune.Value
+Settings["font"] = FontChooser1.SelectedFont
+Settings["window"] = SwitchButtonWindow.Value
+Settings.Save
+FMain.Show
+Me.Close
+
+End
+
+
+
