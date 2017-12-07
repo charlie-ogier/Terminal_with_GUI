@@ -3,7 +3,7 @@
 bSkip As Boolean
 pBash As Process
 sFolder As String = User.Home &/ ".GUITerminal"
-sHistory As String[] = Split(File.Load(User.home &/ ".bash_history"), gb.NewLine)
+sHistory As New String[]
 sCommands As String[] = Dir("/usr/bin").sort(gb.IgnoreCase)
 hTBButton As ToolButton
 hLabel As Label
@@ -25,6 +25,7 @@ Else
   Me.Center
 Endif
 
+sHistory = Split(File.Load(User.home &/ ".bash_history"), gb.NewLine)
 pBash = TerminalView1.Exec(["bash"])
 SetUpHistory
 ManPage("man")
@@ -32,7 +33,9 @@ TerminalView1.Font = Font[Settings["font"]]
 TerminalView1.setfocus
 If Settings["fortune", True] Then Timer1.Trigger 
 CreateSelector
-
+AllRadio_Click(Settings["sValue", "RadioButtonNone"])
+TerminalView1.Background = Settings["background", Color.LightGray]
+TerminalView1.Foreground = Settings["background", Color.Black]
 If Not Exist(sFolder) Then Mkdir sFolder
 
 End
@@ -47,7 +50,8 @@ End
 Public Sub ButtonClear_Click()
 
 TerminalView1.setfocus
-Desktop.Sendkeys("{[Control_L]C}")
+Desktop.Sendkeys("{[Control_L]A}")
+Desktop.Sendkeys("{[Control_L]K}")
 Desktop.Sendkeys("clear")
 Desktop.Sendkeys("[Return]")
 
@@ -74,8 +78,14 @@ LabelHist.Text = Str(sHistory.Count) & " Items"
 
 End
 
-Public Sub AllRadio_Click()
-Dim sName As String = Last.name
+Public Sub AllRadio_Click(Optional sValue As String)
+Dim sName As String = Last.Name
+
+If sValue Then 
+  sName = sValue
+Else
+  sName = Last.Name
+End If
 
 VBoxMan.Visible = False
 VBoxHistory.Visible = False
@@ -85,22 +95,29 @@ Select Case sName
   Case "RadioButtonManPage"
     VBoxMan.Visible = True
     TerminalView1.SetFocus
+    sValue = "RadioButtonManPage"
+    If Not RadioButtonManPage.value Then RadioButtonManPage.value = True
   Case "RadioButtonHistory"
     VBoxHistory.Visible = True
     SetUpHistory
+    sValue = "RadioButtonHistory"
+    If Not RadioButtonHistory.value Then RadioButtonHistory.value = True
   Case "RadioButtonCommands"
     VBoxCommands.Visible = True
     Commands
+    sValue = "RadioButtonCommands"
+    If Not RadioButtonCommands.value Then RadioButtonCommands.value = True
 End Select
+
+Settings["sValue"] = sValue
+Settings.Save
 
 End
 
 Public Sub GridViewHistory_Click()
 Dim sManP As String
 
-TerminalView1.setfocus
-Desktop.Sendkeys("{[Control_L]E}")
-Desktop.Sendkeys("{[Control_L]U}")
+ClearTerminalLine
 
 TerminalView1.setfocus
 Desktop.Sendkeys(GridViewHistory[Last.Row, 0].text & " ")
@@ -144,7 +161,10 @@ End
 Public Sub ManPage(sInputMan As String)
 Dim sManPage As String
 
-Shell "man " & sInputMan To sManPage
+'Debug sInputMan
+
+Shell "man " & sInputMan To sManPage 
+Wait
 If Left(sManPage, 20) = Left(TextAreaMan.text, 20) Then Return
 If Not sManPage Then Return
 
@@ -182,13 +202,17 @@ Desktop.Sendkeys("fortune" & "[Return]")
 End
 
 Public Sub TerminalView1_KeyRelease()
-Dim sLast As String = Last.text
+Dim sLast As String = TerminalView1.text
 Dim sTemp As String
+Dim bMouse As Boolean
 
 If bSkip Then Return
+If Trim(sLast) Ends "$" Then Return
 
-sTemp = Mid(sLast, RInStr(sLast, "$") + 2)
+sTemp = Mid(sLast, RInStr(sLast, "$"))
 If TextAreaMan.text Not Begins UCase(sTemp) Then ManPage(sTemp)
+
+Catch
 
 End
 
@@ -277,8 +301,8 @@ End If
 
 For siCount = 0 To GridViewCommands.Rows.count - 1
   bFound = False
-  If Not bSpeedFileExists Then LabelCommands.Text = Str(siCount + 1) & " of " & Str(GridViewCommands.Rows.count)
-  If siCount = GridViewCommands.Rows.count - 1 Then LabelCommands.Text = Str(siCount + 1) & " of " & Str(GridViewCommands.Rows.count)
+  If Not bSpeedFileExists Then LabelCommands.Text = Str(siCount + 1) & " of " & Str(GridViewCommands.Rows.count) & "   (" & UCase(sChar) & ")"
+  If siCount = GridViewCommands.Rows.count - 1 Then LabelCommands.Text = Str(siCount + 1) & " of " & Str(GridViewCommands.Rows.count) & "   (" & UCase(sChar) & ")"
   If bSpeedFileExists Then
     For siSpeed = 0 To sSpeedLoad.Max
       If InStr(sSpeedLoad[siSpeed], GridViewCommands[siCount, 0].text) Then
@@ -363,33 +387,42 @@ Wait
 
 End
 
+Public Sub ClearTerminalLine()
+
+TerminalView1.setfocus
+Desktop.Sendkeys("{[Control_L]A}")
+Desktop.Sendkeys("{[Control_L]K}")
+
+End
+
 Public Sub GridViewCommands_Click()
 
 If GridViewCommands.Enabled = False Then Return
 
-TerminalView1.setfocus
-Desktop.Sendkeys("{[Control_L]E}")
-Desktop.Sendkeys("{[Control_L]U}")
+ClearTerminalLine
 
 TerminalView1.setfocus
 Desktop.Sendkeys(GridViewCommands[Last.Row, 0].text)
 
-'TODO: When selection a command from the 'Commands' list the Man Page needs a double click to update - Why?
-
-ManPage(Left(GridViewCommands[Last.Row, 0].text, InStr(GridViewCommands[Last.Row, 0].text, " ")))
+Wait 0.2 ''Needed to allow for TerminalView1_KeyRelease to finish 
+ManPage(GridViewCommands[Last.Row, 0].text)
 
 End
 
 'TODO: Context menu in Terminal not working well
 Public Sub TerminalMenu_Click()
 Dim sLast As String = Last.Name
+Dim vPaste As Variant
 
 TerminalView1.setfocus
 Select Case sLast
   Case "MenuPaste"
-    'TerminalView1.Input(Clipboard.Paste)
+    'vPaste = Clipboard.Paste()
+    TerminalView1.Print(Clipboard.Paste())
   Case "MenuCopy"
+    Clipboard.Clear
     Clipboard.Copy(TerminalView1.Text) ''Copys ALL the text in Terminal without the need to highlight?
+    Clipboard.Current = ClipBoard.Selection 
 End Select
 
 End
@@ -403,3 +436,6 @@ If Last.name = "ToolButtonSettings" Then
 Endif
 
 End
+
+
+
