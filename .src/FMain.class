@@ -4,12 +4,20 @@ bSkip As Boolean
 pBash As Process
 sFolder As String = User.Home &/ ".GUITerminal"
 sHistory As New String[]
-sCommands As String[] = Dir("/usr/bin").sort(gb.IgnoreCase)
+sCommands As New String[] 
 hTBButton As ToolButton
 hLabel As Label
 fFontSize As Float = 9
 
 Public Sub Form_Show()
+Dim sEnv As String[] = Split(Application.Env["PATH"], ":")
+Dim sTemp As String
+
+For Each sTemp In sEnv
+  sCommands.insert(Dir(sTemp))
+Next
+
+sCommands.sort(gb.IgnoreCase)
 
 SetUp
 
@@ -34,8 +42,8 @@ TerminalView1.setfocus
 If Settings["fortune", True] Then Timer1.Trigger 
 CreateSelector
 AllRadio_Click(Settings["sValue", "RadioButtonNone"])
-TerminalView1.Background = Settings["background", Color.LightGray]
-TerminalView1.Foreground = Settings["background", Color.Black]
+'TerminalView1.Background = Settings["background", Color.Black]
+'TerminalView1.Foreground = Settings["background", Color.White]
 If Not Exist(sFolder) Then Mkdir sFolder
 
 End
@@ -417,12 +425,9 @@ Dim vPaste As Variant
 TerminalView1.setfocus
 Select Case sLast
   Case "MenuPaste"
-    'vPaste = Clipboard.Paste()
-    TerminalView1.Print(Clipboard.Paste())
+    Desktop.SendKeys(Clipboard.Paste())
   Case "MenuCopy"
-    Clipboard.Clear
-    Clipboard.Copy(TerminalView1.Text) ''Copys ALL the text in Terminal without the need to highlight?
-    Clipboard.Current = ClipBoard.Selection 
+   TerminalView1.Copy
 End Select
 
 End
