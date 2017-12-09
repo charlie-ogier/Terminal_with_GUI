@@ -14,7 +14,7 @@ Dim sEnv As String[] = Split(Application.Env["PATH"], ":")
 Dim sTemp As String
 
 For Each sTemp In sEnv
-  sCommands.insert(Dir(sTemp))
+  Try sCommands.insert(Dir(sTemp))
 Next
 
 sCommands.sort(gb.IgnoreCase)
@@ -37,7 +37,8 @@ sHistory = Split(File.Load(User.home &/ ".bash_history"), gb.NewLine)
 pBash = TerminalView1.Exec(["bash"])
 SetUpHistory
 ManPage("man")
-TerminalView1.Font = Font[Settings["font"]]
+TerminalView1.Font = Font[Settings["font", "Monospace,11"]]
+Settings.Save
 TerminalView1.setfocus
 If Settings["fortune", True] Then Timer1.Trigger 
 CreateSelector
@@ -128,7 +129,7 @@ Dim sManP As String
 ClearTerminalLine
 
 TerminalView1.setfocus
-Desktop.Sendkeys(GridViewHistory[Last.Row, 0].text & " ")
+Desktop.Sendkeys(GridViewHistory[Last.Row, 0].text)
 
 sManP = Replace(GridViewHistory[Last.Row, 0].text, "sudo", "")
 
@@ -142,7 +143,7 @@ Dim sTemp As String
 Dim sFound As New String[]
 
 For Each sTemp In sHistory
-  If InStr(sTemp, TextBoxSearch.text) Then sFound.Add(sTemp)
+  If InStr(sTemp, TextBoxSearch.text, 1, gb.IgnoreCase) Then sFound.Add(sTemp)
 Next
 
 With GridViewHistory
@@ -205,6 +206,7 @@ End
 
 Public Sub Timer1_Timer()
 
+TerminalView1.SetFocus
 Desktop.Sendkeys("fortune" & "[Return]")
 
 End
@@ -421,11 +423,17 @@ End
 Public Sub TerminalMenu_Click()
 Dim sLast As String = Last.Name
 Dim vPaste As Variant
+Dim siCount As Short
+Dim sTemp As String
 
 TerminalView1.setfocus
 Select Case sLast
   Case "MenuPaste"
-    Desktop.SendKeys(Clipboard.Paste())
+    sTemp = Clipboard.Paste()
+    For siCount = 1 To Len(sTemp)
+    If Mid(sTemp, siCount, 1) = "[" Then Desktop.SendKeys("[bracketleft]")
+    Desktop.SendKeys(Mid(sTemp, siCount, 1))
+Next
   Case "MenuCopy"
    TerminalView1.Copy
 End Select

@@ -10,6 +10,12 @@ Count=0
 [DebugWindow/sCommands]
 Geometry=[1361,15,231,961]
 
+[DebugWindow/sEnv]
+Geometry=[943,270,431,387]
+
+[DebugWindow/sList]
+Geometry=[-8,-8,224,280]
+
 [DebugWindow/sSpeedLoad]
 Geometry=[1385,56,527,891]
 
@@ -22,7 +28,7 @@ Path="Terminal_with_GUI.gambas"
 [OpenFile]
 Active=2
 File[1]=".src/FMain.form"
-File[2]=".src/FMain.class:17.417"
+File[2]=".src/FMain.class:29.431"
 Count=4
 File[3]=".src/Configuration.form"
 File[4]=".src/Configuration.class:44.21"
