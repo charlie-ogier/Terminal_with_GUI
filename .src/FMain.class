@@ -9,17 +9,24 @@ hTBButton As ToolButton
 hLabel As Label
 fFontSize As Float = 9
 
-Public Sub Form_Show()
+Public Sub Form_Open()
+
+GetCommands
+SetUp
+
+End
+
+Public Sub GetCommands()
 Dim sEnv As String[] = Split(Application.Env["PATH"], ":")
 Dim sTemp As String
+
+sCommands.Clear
 
 For Each sTemp In sEnv
   Try sCommands.insert(Dir(sTemp))
 Next
 
 sCommands.sort(gb.IgnoreCase)
-
-SetUp
 
 End
 
@@ -33,6 +40,7 @@ Else
   Me.Center
 Endif
 
+Me.show
 sHistory = Split(File.Load(User.home &/ ".bash_history"), gb.NewLine)
 pBash = TerminalView1.Exec(["bash"])
 SetUpHistory
@@ -59,10 +67,7 @@ End
 Public Sub ButtonClear_Click()
 
 TerminalView1.setfocus
-Desktop.Sendkeys("{[Control_L]A}")
-Desktop.Sendkeys("{[Control_L]K}")
-Desktop.Sendkeys("clear")
-Desktop.Sendkeys("[Return]")
+Desktop.Sendkeys("{[Control_L]A}" & "{[Control_L]K}" & "clear" & "[Return]")
 
 End
 
@@ -83,7 +88,7 @@ Next
 GridViewHistory.Scroll(0, GridViewHistory.ScrollHeight)
 
 TextBoxSearch.SetFocus
-LabelHist.Text = Str(sHistory.Count) & " Items"
+LabelHistory.Text = Str(sHistory.Count) & " Items"
 
 End
 
@@ -116,6 +121,8 @@ Select Case sName
     Commands
     sValue = "RadioButtonCommands"
     If Not RadioButtonCommands.value Then RadioButtonCommands.value = True
+  Case "RadioButtonNone"
+    If Not RadioButtonNone.value Then RadioButtonNone.value = True
 End Select
 
 Settings["sValue"] = sValue
@@ -129,7 +136,7 @@ Dim sManP As String
 ClearTerminalLine
 
 TerminalView1.setfocus
-Desktop.Sendkeys(GridViewHistory[Last.Row, 0].text)
+SendThekeys(GridViewHistory[Last.Row, 0].text)
 
 sManP = Replace(GridViewHistory[Last.Row, 0].text, "sudo", "")
 
@@ -170,8 +177,6 @@ End
 Public Sub ManPage(sInputMan As String)
 Dim sManPage As String
 
-'Debug sInputMan
-
 Shell "man " & sInputMan To sManPage 
 Wait
 If Left(sManPage, 20) = Left(TextAreaMan.text, 20) Then Return
@@ -180,12 +185,12 @@ If Not sManPage Then Return
 TextAreaMan.text = sManPage
 
 If sManPage Then 
-  LabelManP.text = Trim(Mid(sManPage, 1, InStr(sManPage, " ")))
-  LabelManP.Font.Bold = True
-  LabelManP.Font.Size = fFontSize + 3
+  LabelManPage.text = Trim(Mid(sManPage, 1, InStr(sManPage, " ")))
+  LabelManPage.Font.Bold = True
+  LabelManPage.Font.Size = fFontSize + 3
   TimerManPage.Start
 Else
-  LabelManP.text = ""
+  LabelManPage.text = ""
 Endif
 
 TextAreaMan.Pos = 0
@@ -195,11 +200,11 @@ End
 
 Public Sub TimerManPage_Timer()
 
-LabelManP.Font.Size = LabelManP.Font.Size - 0.01
+LabelManPage.Font.Size = LabelManPage.Font.Size - 0.01
 
-If LabelManP.Font.Size <= fFontSize Then
+If LabelManPage.Font.Size <= fFontSize Then
   TimerManPage.Stop
-  LabelManP.Font.Bold = False
+  LabelManPage.Font.Bold = False
 Endif
 
 End
@@ -214,7 +219,6 @@ End
 Public Sub TerminalView1_KeyRelease()
 Dim sLast As String = TerminalView1.text
 Dim sTemp As String
-Dim bMouse As Boolean
 
 If bSkip Then Return
 If Trim(sLast) Ends "$" Then Return
@@ -326,8 +330,8 @@ For siCount = 0 To GridViewCommands.Rows.count - 1
   If Not bSpeedFileExists Or Not bFound
     Shell "man " & GridViewCommands[siCount, 0].text To sName
     sName = Mid(sName, InStr(sName, "NAME\n") + 5)
-    If Trim(sName) = "" Then 
-      GridViewCommands[siCount, 1].text = "No man page found for this command"
+    If Trim(sName) = "" Then
+      GridViewCommands[siCount, 1].text = "No man page found"
     Else
       GridViewCommands[siCount, 1].text = Trim(Mid(sName, 1, InStr(sName, gb.NewLine) - 1))
     End If
@@ -367,9 +371,10 @@ For siCount = 0 To 26
     .W = 28
     .Text = "0"
     .border = True
+    .Font.Bold = True
     .Tooltip = "Show all commands not starting with a letter"
   End With
-    Continue
+  Continue
   Endif
   With hTBButton
     .H = 28
@@ -378,21 +383,45 @@ For siCount = 0 To 26
     .border = True
     .Tooltip = "Show all commands starting with " & Chr(64 + siCount)
   End With
-Next
+  Next
 
 hLabel = New Label(HBoxCommandSelect) As "LabelCommandTotal"
 With hLabel
   .Height = 28
   .Width = 100
   .Alignment = Align.Right
-  .Text = "Total = " & Str(sCommands.Max)
+  .AutoResize = True
+  .Text = "Total commands = " & Str(sCommands.Max)
 End With
+
+CommandLetters_click
 
 End
 
 Public Sub CommandLetters_click()
+Dim oObj As Object
+Dim sLast As String = Left(Last.text, 1)
 
-Commands(Last.text)
+If Not sLast Then sLast = "a"
+
+GetCommands
+Commands(sLast)
+
+For Each oObj In HBoxCommandSelect.Children
+  If oObj.Name <> "CommandLetters" Then Continue
+  If oObj.text = sLast Then 
+    oObj.Font.Bold = True
+  Else
+    oObj.Font.Bold = False
+  End If
+  If oObj.text Not Ends "." Then 
+    If Exist(sFolder &/ LCase(oObj.Text & ".csv")) Then
+      oObj.Text &= "."
+      oObj.Tooltip &= "\nData cashed for faster access"
+    Endif
+  Endif
+Next
+
 Wait
 
 End
@@ -400,8 +429,7 @@ End
 Public Sub ClearTerminalLine()
 
 TerminalView1.setfocus
-Desktop.Sendkeys("{[Control_L]A}")
-Desktop.Sendkeys("{[Control_L]K}")
+Desktop.Sendkeys("{[Control_L]A}" "{[Control_L]K}")
 
 End
 
@@ -412,28 +440,21 @@ If GridViewCommands.Enabled = False Then Return
 ClearTerminalLine
 
 TerminalView1.setfocus
-Desktop.Sendkeys(GridViewCommands[Last.Row, 0].text)
+SendThekeys(GridViewCommands[Last.Row, 0].text)
 
-Wait 0.2 ''Needed to allow for TerminalView1_KeyRelease to finish 
+Wait 0.3 ''Needed to allow for TerminalView1_KeyRelease to finish 
 ManPage(GridViewCommands[Last.Row, 0].text)
 
 End
 
-'TODO: Context menu in Terminal not working well
 Public Sub TerminalMenu_Click()
-Dim sLast As String = Last.Name
-Dim vPaste As Variant
-Dim siCount As Short
 Dim sTemp As String
 
 TerminalView1.setfocus
-Select Case sLast
+Select Case Last.Name
   Case "MenuPaste"
-    sTemp = Clipboard.Paste()
-    For siCount = 1 To Len(sTemp)
-    If Mid(sTemp, siCount, 1) = "[" Then Desktop.SendKeys("[bracketleft]")
-    Desktop.SendKeys(Mid(sTemp, siCount, 1))
-Next
+    sTemp = Clipboard.Paste("text/plain")
+      SendTheKeys(sTemp)
   Case "MenuCopy"
    TerminalView1.Copy
 End Select
@@ -443,6 +464,7 @@ End
 Public Sub AllButtons_Click()
 
 If Last.name = "ToolButtonClose" Then Me.Close
+If Last.name = "ToolButtonAbout" Then About.ShowModal
 If Last.name = "ToolButtonSettings" Then
   Configuration.Show
   Me.Close
@@ -450,5 +472,25 @@ Endif
 
 End
 
+Public Sub SendTheKeys(sText As String)
+Dim siCount As Short
 
+TerminalView1.setfocus
 
+For siCount = 1 To Len(sText)
+  If Mid(sText, siCount, 1) = "[" Then 
+    Desktop.SendKeys("[bracketleft]")
+  Else
+    Desktop.SendKeys(Mid(sText, siCount, 1))
+  Endif
+Next
+
+End
+
+Public Sub Labels_MouseDown()
+Dim sName As String = Last.name
+
+sName = Replace(sName, "Label", "RadioButton")
+AllRadio_Click(sName)
+
+End

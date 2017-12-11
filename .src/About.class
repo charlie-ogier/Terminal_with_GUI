@@ -1,0 +1,13 @@
+' Gambas class file
+
+Public Sub ButtonClose_Click()
+
+Me.Close
+
+End
+
+Public Sub Form_Open()
+
+TextAreaAbout.Pos = 0
+
+End

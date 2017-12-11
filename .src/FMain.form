@@ -34,9 +34,18 @@
         { Panel1 Panel
           MoveScaled(6,1,1,2)
         }
+        { ToolButtonAbout ToolButton AllButtons
+          Name = "ToolButtonAbout"
+          MoveScaled(8,0,4,4)
+          ToolTip = ("Help and about")
+          Picture = Picture["icon:/22/question"]
+        }
+        { Panel2 Panel
+          MoveScaled(12,1,1,2)
+        }
         { ToolButtonClose ToolButton AllButtons
           Name = "ToolButtonClose"
-          MoveScaled(9,0,4,4)
+          MoveScaled(14,0,4,4)
           ToolTip = ("Bye bye!")
           Picture = Picture["icon:/22/stop"]
         }
@@ -61,7 +70,7 @@
         MoveScaled(0,0,98,4)
         { RadioButtonCommands RadioButton AllRadio
           Name = "RadioButtonCommands"
-          MoveScaled(0,0,22,4)
+          MoveScaled(2,0,22,4)
           ToolTip = ("Show a list of available commands")
           Text = Shortcut(("Commands"), "C")
         }
@@ -99,7 +108,8 @@
       }
       { Panel9 HBox
         MoveScaled(0,4,98,6)
-        { LabelCommands Label
+        { LabelCommands Label Labels
+          Name = "LabelCommands"
           MoveScaled(0,0,22,4)
           Alignment = Align.Center
         }
@@ -107,7 +117,8 @@
           MoveScaled(23,0,0.2857,4)
           Background = Color.Black
         }
-        { LabelManP Label
+        { LabelManPage Label Labels
+          Name = "LabelManPage"
           MoveScaled(26,0,22,4)
           Alignment = Align.Center
         }
@@ -115,13 +126,19 @@
           MoveScaled(49,0,0.2857,4)
           Background = Color.Black
         }
-        { LabelHist Label
+        { LabelHistory Label Labels
+          Name = "LabelHistory"
           MoveScaled(51,0,22,4)
           Alignment = Align.Center
         }
         { Separator3 Separator
           MoveScaled(74,0,0.2857,4)
           Background = Color.Black
+        }
+        { LabelNone Label Labels
+          Name = "LabelNone"
+          MoveScaled(75,0,22,4)
+          Alignment = Align.Center
         }
       }
     }
@@ -201,7 +218,7 @@
           Expand = True
         }
         { LabelFound Label
-          MoveScaled(63,0,22,4)
+          MoveScaled(62,0,9,4)
           AutoResize = True
         }
       }

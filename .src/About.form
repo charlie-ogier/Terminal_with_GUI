@@ -1,0 +1,44 @@
+# Gambas Form File 3.0
+
+{ Form Form
+  MoveScaled(0,0,120,74)
+  Arrangement = Arrange.Vertical
+  Padding = 5
+  { TextAreaAbout TextArea
+    MoveScaled(12,15,105,32)
+    Expand = True
+    Text = ("Designed to help you experiment with the command line\nPlease send any bugs or comments to bugs@cogier.com\nFor Gambas questions have a look at http://www.gambas.one and http://forum.gambas.one/\n\nMan pages loaded automatically - Click on the Man page button then type 'grep' on the command line. The Man page for 'grep' will be displayed.\nAll commands in your 'Path' will be available - Click on the 'Commands' button and choose from the available buttons.\nIf the Buttons show a '.' after the letter the details have been cached for faster retrival the next time they are required.\nClick on a History item or a Command item to place it on the command line and update the Man page if available.\nTerminal Cut and Paste features are available from the Right click context menu.\n\nMIT License\n\nCopyright (c) 2017 Charlie Ogier and Matt Collins\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.")
+    ReadOnly = True
+    Wrap = True
+  }
+  { HBox1 HBox
+    MoveScaled(23,64,57,4)
+    { Panel3 Panel
+      MoveScaled(0,0,2,2)
+    }
+    { URLLabelGambasOne URLLabel
+      MoveScaled(3,1,14,3)
+      AutoResize = True
+      Link = "http://wordpress.gambas.one/"
+      Text = ("Gambas tips")
+    }
+    { Panel2 Panel
+      MoveScaled(18,1,2,2)
+    }
+    { URLLabelGambasOneForum URLLabel
+      MoveScaled(22,1,14,3)
+      AutoResize = True
+      Link = "http://forum.gambas.one/"
+      Text = ("Gambas forum")
+    }
+    { Panel1 Panel
+      MoveScaled(38,1,2,2)
+      Expand = True
+    }
+    { ButtonClose Button
+      MoveScaled(42,0,14,4)
+      Text = Shortcut(("Close"), "C")
+      Picture = Picture["icon:/22/close"]
+    }
+  }
+}
